@@ -1,0 +1,397 @@
+/* 文件说明：该文件定义 MVP 后台的基础样式。
+   功能说明：提供任务页、结果页、审核页和线索库页的通用布局与表单样式。
+
+   结构概览：
+     第一部分：全局变量
+     第二部分：基础布局
+     第三部分：表单与按钮
+     第四部分：表格与详情卡片
+*/
+
+/* ========== 第一部分：全局变量 ========== */
+:root {
+  --bg: #f4f1ea;
+  --panel: #fffaf2;
+  --ink: #2a211a;
+  --muted: #7a6b5b;
+  --line: #d8ccbf;
+  --brand: #7b4b2a;
+  --brand-soft: #e8d8c4;
+  --danger: #9b3d28;
+  --success: #365c3b;
+  --shadow: 0 12px 32px rgba(58, 40, 24, 0.08);
+}
+
+/* ========== 第二部分：基础布局 ========== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(123, 75, 42, 0.12), transparent 28%),
+    linear-gradient(180deg, #f7f2ea 0%, #efe7dc 100%);
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.shell {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 20px 44px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.brand p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.72);
+  border: 1px solid rgba(123, 75, 42, 0.12);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+.card {
+  grid-column: span 12;
+  background: rgba(255, 250, 242, 0.92);
+  border: 1px solid rgba(123, 75, 42, 0.12);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.card.half {
+  grid-column: span 6;
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.summary-item strong {
+  display: block;
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+/* ========== 第三部分：表单与按钮 ========== */
+form {
+  width: 100%;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.checkbox-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.button,
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+  background: var(--brand);
+  color: #fffdf8;
+}
+
+.button.secondary,
+button.secondary {
+  background: #efe5d9;
+  color: var(--ink);
+}
+
+.button.danger,
+button.danger {
+  background: var(--danger);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag.warn {
+  background: #f5e4c8;
+  color: #8a5815;
+}
+
+.tag.danger {
+  background: #efd2cc;
+  color: var(--danger);
+}
+
+.tag.success {
+  background: #dbe9dc;
+  color: var(--success);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+/* ========== 第四部分：表格与详情卡片 ========== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(123, 75, 42, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.score-high {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.score-medium {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.score-low {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.detail-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.detail-item strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.reason-list,
+.meta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reason-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f5efe6;
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.notice {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #f7f3ed;
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.trend-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.trend-bar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #eadfce;
+}
+
+.trend-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.trend-bar-fill.success {
+  background: linear-gradient(90deg, #7aa27f 0%, #365c3b 100%);
+}
+
+.trend-bar-fill.warn {
+  background: linear-gradient(90deg, #e9c46b 0%, #8a5815 100%);
+}
+
+pre.excerpt {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f7f3ed;
+  border: 1px solid var(--line);
+  max-height: 320px;
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .card.half {
+    grid-column: span 12;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
