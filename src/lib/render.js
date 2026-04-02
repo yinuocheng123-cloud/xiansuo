@@ -313,6 +313,95 @@ function buildFailureReasonBuckets(failureSamples = [], retryRecords = []) {
   return Array.from(buckets.values()).sort((left, right) => right.count - left.count);
 }
 
+function collectFailureReasonEvents(failureSamples = [], retryRecords = []) {
+  return [...failureSamples, ...retryRecords]
+    .map((item) => ({
+      reason: categorizeFailureReason(item.error || ""),
+      at: item.at || "",
+      error: item.error || "",
+      url: item.url || "",
+      query: item.query || "",
+      stage: item.stage || "",
+      attempt: item.attempt || ""
+    }))
+    .filter((item) => item.reason)
+    .sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime());
+}
+
+function buildReasonCountMap(events) {
+  const counts = new Map();
+
+  for (const item of events) {
+    counts.set(item.reason, (counts.get(item.reason) || 0) + 1);
+  }
+
+  return counts;
+}
+
+function buildFailureReasonInsights(failureSamples = [], retryRecords = []) {
+  const events = collectFailureReasonEvents(failureSamples, retryRecords);
+  if (events.length === 0) {
+    return {
+      topReasons: [],
+      changeHints: [],
+      recentWindowSize: 0,
+      topReasonRecentSamples: []
+    };
+  }
+
+  const topReasons = buildFailureReasonBuckets(failureSamples, retryRecords)
+    .slice(0, 3)
+    .map((bucket, index) => ({
+      rank: index + 1,
+      label: bucket.label,
+      count: bucket.count,
+      ratio: Math.round((bucket.count / events.length) * 100)
+    }));
+
+  // 用最近半窗口和上一阶段窗口做轻量比较，避免引入更复杂的事件流模型。
+  const recentWindowSize = Math.max(2, Math.min(6, Math.ceil(events.length / 2)));
+  const recentEvents = events.slice(0, recentWindowSize);
+  const previousEvents = events.slice(recentWindowSize, recentWindowSize * 2);
+  const recentCounts = buildReasonCountMap(recentEvents);
+  const previousCounts = buildReasonCountMap(previousEvents);
+  const reasons = Array.from(new Set([...recentCounts.keys(), ...previousCounts.keys()]));
+
+  const changeHints = reasons
+    .map((reason) => {
+      const recentCount = recentCounts.get(reason) || 0;
+      const previousCount = previousCounts.get(reason) || 0;
+      const delta = recentCount - previousCount;
+      let trend = "持平";
+      let summary = `最近窗口 ${recentCount} 次，上一阶段 ${previousCount} 次`;
+
+      if (delta > 0) {
+        trend = "上升";
+        summary = `最近窗口 ${recentCount} 次，较上一阶段增加 ${delta} 次`;
+      } else if (delta < 0) {
+        trend = "回落";
+        summary = `最近窗口 ${recentCount} 次，较上一阶段减少 ${Math.abs(delta)} 次`;
+      }
+
+      return {
+        label: reason,
+        trend,
+        delta,
+        summary
+      };
+    })
+    .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta) || right.label.localeCompare(left.label, "zh-CN"))
+    .slice(0, 3);
+
+  return {
+    topReasons,
+    changeHints,
+    recentWindowSize,
+    topReasonRecentSamples: topReasons.length > 0
+      ? events.filter((item) => item.reason === topReasons[0].label).slice(0, 3)
+      : []
+  };
+}
+
 function renderTrendPanel(title, buckets, emptyText, tone = "success") {
   if (!Array.isArray(buckets) || buckets.length === 0) {
     return `
@@ -340,6 +429,71 @@ function renderTrendPanel(title, buckets, emptyText, tone = "success") {
             </div>
           </div>
         `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderFailureReasonInsightPanel(insights) {
+  if (!insights || insights.topReasons.length === 0) {
+    return `
+      <section class="card">
+        <h2>失败原因 Top 摘要</h2>
+        <div class="muted">暂无失败原因摘要</div>
+      </section>
+    `;
+  }
+
+  const trendClassMap = {
+    上升: "tag danger",
+    回落: "tag success",
+    持平: "tag warn"
+  };
+
+  return `
+    <section class="card">
+      <h2>失败原因 Top 摘要</h2>
+      <div class="detail-list">
+        ${insights.topReasons.map((item) => `
+          <div class="detail-item">
+            <strong>Top ${escapeHtml(item.rank)}</strong>
+            <div>${escapeHtml(item.label)}</div>
+            <div class="meta-list" style="margin-top:8px;">
+              <span class="tag warn">${escapeHtml(item.count)} 次</span>
+              <span class="muted">占最近失败事件 ${escapeHtml(item.ratio)}%</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="notice" style="margin-top:16px;">
+        <strong>按原因的最近变化提示</strong>
+        <div class="stack" style="margin-top:10px;">
+          ${insights.changeHints.map((item) => `
+            <div class="meta-list">
+              <span class="${trendClassMap[item.trend] || "tag"}">${escapeHtml(item.trend)}</span>
+              <span><strong>${escapeHtml(item.label)}</strong></span>
+              <span class="muted">${escapeHtml(item.summary)}</span>
+            </div>
+          `).join("")}
+        </div>
+        <div class="muted" style="margin-top:10px;">比较口径：最近 ${escapeHtml(insights.recentWindowSize)} 条失败相关事件 vs 上一阶段同等窗口。</div>
+      </div>
+      <div class="notice" style="margin-top:16px;">
+        <strong>Top 1 最近失败样本</strong>
+        <div class="stack" style="margin-top:10px;">
+          ${insights.topReasonRecentSamples.length > 0 ? insights.topReasonRecentSamples.map((item) => `
+            <div class="notice-sample">
+              <div class="meta-list">
+                <span class="tag warn">${escapeHtml(item.reason)}</span>
+                <span class="muted">${escapeHtml(item.at || "")}</span>
+                ${item.stage ? `<span class="muted">阶段：${escapeHtml(item.stage)}</span>` : ""}
+                ${item.attempt ? `<span class="muted">第 ${escapeHtml(item.attempt)} 次</span>` : ""}
+              </div>
+              <div class="muted" style="margin-top:6px;">${escapeHtml(item.error || "")}</div>
+              ${item.url || item.query ? `<div class="muted break-all" style="margin-top:6px;">${escapeHtml(item.url || item.query)}</div>` : ""}
+            </div>
+          `).join("") : `<div class="muted">暂无 Top 1 失败样本</div>`}
+        </div>
       </div>
     </section>
   `;
@@ -470,6 +624,7 @@ function renderTaskDetailPage(task, leads = []) {
   const failureTrend = buildTrendBuckets(task.failureSamples || [], (item) => item.at);
   const successTrend = buildTrendBuckets(leads || [], (item) => item.createdAt);
   const failureReasonBuckets = buildFailureReasonBuckets(task.failureSamples || [], task.retryRecords || []);
+  const failureReasonInsights = buildFailureReasonInsights(task.failureSamples || [], task.retryRecords || []);
 
   return renderLayout("任务详情页", `
     <div class="grid">
@@ -500,6 +655,7 @@ function renderTaskDetailPage(task, leads = []) {
       ${renderTrendPanel("最近失败趋势", failureTrend, "暂无失败趋势数据", "warn")}
       ${renderTrendPanel("最近成功入池趋势", successTrend, "暂无成功入池趋势数据", "success")}
       ${renderTrendPanel("最近失败原因分类", failureReasonBuckets, "暂无失败原因数据", "warn")}
+      ${renderFailureReasonInsightPanel(failureReasonInsights)}
 
       <section class="card">
         <h2>任务诊断展开</h2>

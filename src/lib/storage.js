@@ -48,7 +48,14 @@ async function ensureDatabaseExists() {
     const result = await adminPool.query("select 1 from pg_database where datname = $1", [targetDatabase]);
     if (result.rowCount === 0) {
       const safeDatabaseName = targetDatabase.replace(/"/g, "\"\"");
-      await adminPool.query(`create database "${safeDatabaseName}"`);
+      try {
+        await adminPool.query(`create database "${safeDatabaseName}"`);
+      } catch (error) {
+        // 数据库初始化可能在并发启动时同时触发，这里接受“已被其他进程创建”的结果，避免无意义失败。
+        if (error.code !== "42P04" && error.code !== "23505") {
+          throw error;
+        }
+      }
     }
   } finally {
     await adminPool.end();
@@ -331,7 +338,8 @@ function buildLeadFilterQuery(filters = {}) {
   }
 
   if (filters.brand) {
-    pushClause("coalesce(brand, '') ilike ?", filters.brand, (input) => `%${input}%`);
+    // 品牌模糊筛选要尽量让 PostgreSQL 的 brand trigram 索引可参与计划，避免 coalesce 破坏索引命中。
+    pushClause("brand ilike ?", filters.brand, (input) => `%${input}%`);
   }
 
   if (filters.sourcePlatform) {

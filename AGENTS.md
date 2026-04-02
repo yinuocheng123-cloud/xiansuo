@@ -1,7 +1,7 @@
 # 仓库代理约束
 
 ## 最新一期记录
-- `custom/notes/v0.8-failure-reasons-composite-indexes-and-samples.md`
+- `custom/notes/v0.9-failure-reason-insights-and-explain.md`
 
 ## 执行准则
 - 每次执行任务前先尝试同步最新仓库；若当前目录不是 Git 仓库，需明确说明原因。
