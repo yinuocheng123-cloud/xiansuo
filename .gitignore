@@ -1,6 +1,0 @@
-node_modules/
-*.log
-*.out.log
-*.err.log
-data/*.json
-logs/
